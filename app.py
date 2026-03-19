@@ -6,7 +6,7 @@ import holidays
 import numpy as np
 
 st.set_page_config(page_title="Airline L/F Predictor Pro", layout="wide")
-st.title("✈️ 노선별 L/F 인공지능 예측 모델 (정확도 분석형)")
+st.title("✈️ 노선별 L/F 인공지능 예측 모델")
 
 kr_holidays = holidays.KR()
 
@@ -20,44 +20,44 @@ if uploaded_file:
     selected_route = st.sidebar.selectbox("노선 선택", df['Route'].unique())
     route_df = df[df['Route'] == selected_route].sort_values('Date').copy()
     
-    if len(route_df) > 30: # 데이터가 어느 정도 쌓였을 때만 작동
-        # 1. 모델 학습 및 정확도 측정 (최근 14일 데이터를 시험지로 사용)
+    if len(route_df) > 21:
+        # --- [학습 및 정확도 계산 구간] ---
+        # 최근 14일 데이터를 '시험지'로 사용하여 모델의 실력을 테스트합니다.
         train = route_df['LF'][:-14]
         test = route_df['LF'][-14:]
         
-        # 더 복잡한 패턴을 학습하도록 옵션 강화 (Trend와 Seasonality 결합)
         model = ExponentialSmoothing(route_df['LF'], trend='add', seasonal='add', seasonal_periods=7).fit()
         
-        # 정확도(MAPE) 계산
+        # 실제값과 예측값의 차이(MAPE) 계산
         test_pred = model.predict(start=len(train), end=len(train)+len(test)-1)
         mape = np.mean(np.abs((test - test_pred) / test)) * 100
-        accuracy = max(0, 100 - mape)
+        accuracy = max(0, 100 - mape) # 100점에서 오차율을 뺍니다.
 
-        # 상단에 정확도 지표 표시
-        col1, col2 = st.columns(2)
-        col1.metric("🎯 예측 모델 정확도", f"{accuracy:.1f}%")
-        col2.info("정확도가 85% 이상이면 매우 신뢰할 수 있는 데이터입니다.")
+        # --- [화면 상단에 숫자 카드 표시] ---
+        col1, col2, col3 = st.columns(3)
+        col1.metric("🎯 예측 정확도", f"{accuracy:.1f}%")
+        col2.metric("📈 최근 평균 L/F", f"{route_df['LF'].iloc[-7:].mean():.2f}")
+        col3.success("85% 이상이면 신뢰도가 매우 높습니다!")
 
-        # 2. 미래 90일 예측
+        # 미래 90일 예측
         forecast_days = 90
         forecast = model.forecast(forecast_days)
         future_dates = pd.date_range(start=route_df['Date'].max() + pd.Timedelta(days=1), periods=forecast_days)
         
-        # 공휴일 보정 (현실적인 비율로 가산)
         adjusted_forecast = []
         for date, val in zip(future_dates, forecast):
             if date in kr_holidays:
-                new_val = val * 1.15 # 15% 할증
+                new_val = val * 1.15 # 공휴일 15% 가산
                 adjusted_forecast.append(min(1.0, new_val) if val <= 1.0 else min(100, new_val))
             else:
                 adjusted_forecast.append(val)
         
         forecast_df = pd.DataFrame({'Date': future_dates, 'Predicted_LF': adjusted_forecast})
 
-        # 3. 그래프 그리기
-        fig = px.line(route_df, x='Date', y='LF', title=f"{selected_route} 학습 기반 예측 (정확도 {accuracy:.1f}%)")
+        # 그래프 출력
+        fig = px.line(route_df, x='Date', y='LF', title=f"{selected_route} AI 예측 시뮬레이션 (정확도: {accuracy:.1f}%)")
         fig.add_scatter(x=forecast_df['Date'], y=forecast_df['Predicted_LF'], name="AI 미래 예측", mode='lines+markers')
         st.plotly_chart(fig, use_container_width=True)
         
     else:
-        st.warning("데이터가 부족하여 인공지능 학습이 어렵습니다. (최소 30일치 필요)")
+        st.warning("데이터가 부족하여 정확도를 측정할 수 없습니다. (최소 21일치 필요)")
