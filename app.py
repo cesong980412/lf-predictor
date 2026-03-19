@@ -41,12 +41,12 @@ if uploaded_file:
             forecast_df = pd.DataFrame({'Date': future_dates, 'Predicted_LF': forecast})
 
             # 그래프 시각화
-            fig = px.line(route_df, x='Date', y='LF', title=f"{selected_route} L/F 추이 및 향후 30일 예측")
+            fig = px.line(route_df, x='Date', y='LF', title=f"{selected_route} L/F 추이 및 향후 60일 예측")
             fig.add_scatter(x=forecast_df['Date'], y=forecast_df['Predicted_LF'], name="미래 예측치", mode='lines+markers')
             st.plotly_chart(fig, use_container_width=True)
             
             # 예측 데이터 표 노출
-            st.write("📅 향후 30일 예측 데이터 (상위 5일)")
+            st.write("📅 향후 60일 예측 데이터 (상위 5일)")
             st.dataframe(forecast_df.head())
             
         except Exception as e:
