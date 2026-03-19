@@ -6,7 +6,7 @@ import holidays
 import numpy as np
 
 st.set_page_config(page_title="Airline L/F Predictor Pro", layout="wide")
-st.title("✈️ 노선별 L/F 인공지능 예측 시뮬레이터")
+st.title("✈️ 노선별 L/F 인공지능 예측 모델")
 
 kr_holidays = holidays.KR()
 
@@ -36,7 +36,7 @@ if uploaded_file:
         col1, col2, col3 = st.columns(3)
         col1.metric("🎯 예측 정확도", f"{accuracy:.1f}%")
         col2.metric("📊 데이터 최신 7일 평균", f"{route_df['LF'].iloc[-7:].mean():.1f}%")
-        col3.success("바닥 탈출 및 60일 예측 통합 완료!")
+        col3.success("바닥 탈출 성공! 실적+예측 구간 줌인 완료")
         st.divider()
 
         forecast_days = 60
@@ -52,9 +52,11 @@ if uploaded_file:
         
         forecast_df = pd.DataFrame({'Date': future_dates, 'Predicted_LF': adjusted_forecast})
 
+        # 그래프 그리기
         fig = px.line(route_df, x='Date', y='LF', title=f"{selected_route} 실적 분석 및 향후 {forecast_days}일 예측")
         fig.add_scatter(x=forecast_df['Date'], y=forecast_df['Predicted_LF'], name="AI 미래 예측", mode='lines+markers')
         
+        # [핵심] 현재 날짜(2026년)를 무시하고 오직 데이터가 있는 시작과 끝만 범위로 설정
         view_start = route_df['Date'].min()
         view_end = forecast_df['Date'].max()
 
@@ -62,7 +64,8 @@ if uploaded_file:
             yaxis_title="Load Factor (%)",
             yaxis_range=[0, 105],
             yaxis=dict(tickformat='.0f', ticksuffix="%"),
-            xaxis=dict(range=[view_start, view_end], type="date") 
+            # X축 강제 고정: 오늘 날짜가 2026년이라도 2025년 데이터 구간만 보여줘!
+            xaxis=dict(range=[view_start, view_end], autorescale=False, type="date")
         )
         st.plotly_chart(fig, use_container_width=True)
     else:
