@@ -33,11 +33,11 @@ if uploaded_file:
             # 예측 모델 실행 (데이터를 부동소수점으로 변환하여 계산 안정성 확보)
             lf_values = route_df['LF'].astype(float).values
             model = ExponentialSmoothing(lf_values, seasonal='add', seasonal_periods=7).fit()
-            forecast = model.forecast(30)
+            forecast = model.forecast(60)
             
             # 미래 날짜 생성
             last_date = route_df['Date'].max()
-            future_dates = pd.date_range(start=last_date + pd.Timedelta(days=1), periods=30)
+            future_dates = pd.date_range(start=last_date + pd.Timedelta(days=1), periods=60)
             forecast_df = pd.DataFrame({'Date': future_dates, 'Predicted_LF': forecast})
 
             # 그래프 시각화
