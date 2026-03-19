@@ -5,7 +5,7 @@ from statsmodels.tsa.holtwinters import ExponentialSmoothing
 import holidays
 
 st.set_page_config(page_title="Airline L/F Predictor", layout="wide")
-st.title("✈️ 노선별 L/F 예측 (공휴일 보정 완료)")
+st.title("✈️ 노선별 L/F 미래 예측 시뮬레이터")
 
 kr_holidays = holidays.KR()
 
